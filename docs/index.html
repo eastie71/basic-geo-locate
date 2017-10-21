@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Geolocation</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: helvetica, sans-serif;
+            font-size: 130%;
+        }
+        #header {
+            margin: 0 auto;
+            padding-top: 15px;
+            padding-bottom: 15px;
+            font-size: 30px;
+            width: 600px;
+        }
+      
+      #map {
+        margin: 0 auto;
+        height: 40%;
+        width: 600px;
+      }
+      #address-wrapper {
+        margin: 0 auto;
+        padding-top: 20px;
+        width: 600px;
+      }
+      /* Style each input field */
+        input {
+            height: 36px;
+            padding: 5px 5px 12px 5px;
+            font-size: 18px;
+            border-radius: 5px;
+            border: 1px solid grey;
+            width: 320px;
+        }
+        label {
+            position: relative;
+            top: 14px;
+            width: 125px;
+            float: left;
+        }
+        .formElement {
+            margin-bottom: 15px;
+        }
+        #submitButton {
+            width: 130px;
+            margin: 0 auto;
+        }
+        .bad {
+            color: red;
+        }
+        .good {
+            color: green;
+        }
+    </style>
+  </head>
+  <body>
+    <div id="header">Examples of using Google Geolocation API:</div>
+    <div id="map"></div>
+    <div id="address-wrapper">
+        <h4>Enter an address or city to find the Country</h4>
+        <div class="formElement">
+            <label for="address">Address</label>
+            <input type="text" name="address" id="address" placeholder="1 Smith Street, Collingwood">
+        </div>
+        <div class="formElement">
+            <input type="submit" id="submitButton" value="Find Country">
+        </div>
+        <div id="country-result">Results!</div>
+    </div>
+    <script>
+      // Note: This example requires that you consent to location sharing when
+      // prompted by your browser. If you see the error "The Geolocation service
+      // failed.", it means you probably did not give permission for the browser to
+      // locate you.
+
+      // Using the API Key from my "craigdavideastwood@gmail.com" Google Developer account (Geolocation project)
+
+      function initMap() {
+        var map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: -34.397, lng: 150.644},
+          zoom: 6
+        });
+        var infoWindow = new google.maps.InfoWindow();
+
+        // Try HTML5 geolocation.
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(position) {
+            var pos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+
+            infoWindow.setPosition(pos);
+            infoWindow.setContent('Location found.');
+            infoWindow.open(map);
+            map.setCenter(pos);
+            map.setZoom(13);
+//alert("Your latitude position is: " + pos['lat'] + " and longitude position is: " + pos['lng']);
+          }, function() {
+            handleLocationError(true, infoWindow, map.getCenter());
+          });
+        } else {
+          // Browser doesn't support Geolocation
+          handleLocationError(false, infoWindow, map.getCenter());
+        }
+      }
+
+        $("#submitButton").click(function () {
+                var results = "";
+                var fieldsMissing = "";
+                if ($("#address").val() == "") {
+                    fieldsMissing += "<br>Address";
+                }
+                
+                if (fieldsMissing != "") {
+                    results += "The following field(s) need to have values entered:" + fieldsMissing;
+                    $("#country-result").addClass("bad");
+                    $("#country-result").removeClass("good");
+                    $("#country-result").html(results);
+                } else {
+                    var localAddress = $("#address").val();
+                    var country;
+                    localAddress.replace(/ /g, "+");
+                    $.ajax({
+                        //url: "https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key=AIzaSyCNq4Z11yUBsVkl_FjKMq-BlnCGe-WEStU",
+                        url: "https://maps.googleapis.com/maps/api/geocode/json?address=" + localAddress + "&key=AIzaSyCNq4Z11yUBsVkl_FjKMq-BlnCGe-WEStU",
+                        type: "GET",
+                        success: function (data) {
+                                //alert(data);
+                                console.log(data);
+                                $.each(data['results'][0]['address_components'], function (key, value) {
+                                    $.each(value['types'], function( typekey, typevalue) {
+                                        //alert(typevalue);
+                                        // display the long country name
+                                        if (typevalue == "country") {
+                                            //alert(value['long_name']);
+                                            results = "The Country is: " + value['long_name'];
+                                            $("#country-result").addClass("good");
+                                            $("#country-result").removeClass("bad");
+                                            $("#country-result").html(results);
+                                        }
+                                    })
+                                })
+                            }
+                    })
+                } 
+                /*
+                if (errorMessage != "") {
+                    $("#errorMessage").html(errorMessage);
+                } else {
+                    $("#successMessage").css("display", "block");
+                    $("#errorMessage").css("display", "none");
+                }
+                */
+               
+        });
+
+      function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+        infoWindow.setPosition(pos);
+        infoWindow.setContent(browserHasGeolocation ?
+                              'Error: The Geolocation service failed.' :
+                              'Error: Your browser doesn\'t support geolocation.');
+      }
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB_6CnhcCzMBVeawqwjNyM31TWuiiRemx8&callback=initMap">
+    </script>
+  </body>
+</html>
